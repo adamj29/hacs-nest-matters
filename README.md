@@ -47,7 +47,7 @@ For auto-discovery to work properly, you need to rename your Matter thermostat e
 ### Step 3: Install Nest Matters
 
 #### Via HACS (Recommended)
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?category=Integration&repository=nest-matters&owner=darki73)
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?category=Integration&repository=hacs-nest-matters&owner=darki73)
 
 #### Manual Installation
 1. Download the latest release from [GitHub](https://github.com/darki73/hacs-nest-matters)
