@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Nest Matters Setup",
+        "description": "Configure your unified thermostat by selecting the Matter and Google Nest entities to combine."
+      },
+      "discovery": {
+        "title": "Auto-Discovered Thermostats", 
+        "description": "We found {count} thermostat pair(s). Select one to set up:",
+        "data": {
+          "selected_option": "Choose Configuration Option"
+        }
+      },
+      "manual": {
+        "title": "Manual Thermostat Setup",
+        "description": "Manually select your Matter and Google Nest entities to combine:",
+        "data": {
+          "name": "Integration Name",
+          "matter_entity": "Matter Thermostat Entity", 
+          "google_entity": "Google Nest Thermostat Entity"
+        }
+      }
+    },
+    "error": {
+      "invalid_entity": "Selected entity is not valid or not found",
+      "same_entity": "Matter and Google entities cannot be the same",
+      "entity_not_climate": "Selected entity is not a climate entity", 
+      "entity_unavailable": "Selected entity is currently unavailable",
+      "invalid_selection": "Invalid thermostat pair selection"
+    },
+    "abort": {
+      "already_configured": "This thermostat combination is already configured",
+      "no_entities": "No suitable climate entities found"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Nest Matters Options",
+        "description": "Configure advanced options for your unified thermostat.",
+        "data": {
+          "name": "Integration Name"
+        }
+      }
+    }
+  }
+}
