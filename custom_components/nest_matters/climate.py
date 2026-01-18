@@ -94,16 +94,24 @@ class NestMattersClimate(ClimateEntity):
         for remove_listener in self._remove_listeners:
             remove_listener()
 
-    async def _handle_source_state_change(self, event) -> None:
+    def _handle_source_state_change(self, event) -> None:
         """Handle state changes from source entities."""
-        self.async_write_ha_state()
+        try:
+            self.async_write_ha_state()
+        except Exception as err:
+            _LOGGER.debug("Error updating state: %s", err)
 
     @property
     def current_temperature(self) -> float | None:
         """Return current temperature from Matter entity (more responsive)."""
         matter_state = self.hass.states.get(self._matter_entity_id)
         if matter_state and matter_state.attributes:
-            return matter_state.attributes.get("current_temperature")
+            temp = matter_state.attributes.get("current_temperature")
+            if temp is not None:
+                try:
+                    return float(temp)
+                except (ValueError, TypeError):
+                    return None
         return None
 
     @property
@@ -111,7 +119,12 @@ class NestMattersClimate(ClimateEntity):
         """Return target temperature from Matter entity."""
         matter_state = self.hass.states.get(self._matter_entity_id)
         if matter_state and matter_state.attributes:
-            return matter_state.attributes.get("temperature")
+            temp = matter_state.attributes.get("temperature")
+            if temp is not None:
+                try:
+                    return float(temp)
+                except (ValueError, TypeError):
+                    return None
         return None
 
     @property
@@ -119,7 +132,12 @@ class NestMattersClimate(ClimateEntity):
         """Return high target temperature from Matter entity."""
         matter_state = self.hass.states.get(self._matter_entity_id)
         if matter_state and matter_state.attributes:
-            return matter_state.attributes.get("target_temp_high")
+            temp = matter_state.attributes.get("target_temp_high")
+            if temp is not None:
+                try:
+                    return float(temp)
+                except (ValueError, TypeError):
+                    return None
         return None
 
     @property
@@ -127,15 +145,24 @@ class NestMattersClimate(ClimateEntity):
         """Return low target temperature from Matter entity."""
         matter_state = self.hass.states.get(self._matter_entity_id)
         if matter_state and matter_state.attributes:
-            return matter_state.attributes.get("target_temp_low")
+            temp = matter_state.attributes.get("target_temp_low")
+            if temp is not None:
+                try:
+                    return float(temp)
+                except (ValueError, TypeError):
+                    return None
         return None
 
     @property
     def hvac_mode(self) -> HVACMode | None:
         """Return HVAC mode from Google entity."""
         google_state = self.hass.states.get(self._google_entity_id)
-        if google_state:
-            return google_state.state
+        if google_state and google_state.state not in (None, "unknown", "unavailable"):
+            try:
+                return HVACMode(google_state.state)
+            except ValueError:
+                _LOGGER.debug("Unknown HVAC mode: %s", google_state.state)
+                return None
         return None
 
     @property
@@ -143,7 +170,14 @@ class NestMattersClimate(ClimateEntity):
         """Return available HVAC modes from Google entity."""
         google_state = self.hass.states.get(self._google_entity_id)
         if google_state and google_state.attributes:
-            return google_state.attributes.get("hvac_modes", [])
+            modes = google_state.attributes.get("hvac_modes", [])
+            result = []
+            for mode in modes:
+                try:
+                    result.append(HVACMode(mode))
+                except ValueError:
+                    _LOGGER.debug("Skipping unknown HVAC mode: %s", mode)
+            return result
         return []
 
     @property
@@ -175,16 +209,26 @@ class NestMattersClimate(ClimateEntity):
         """Return minimum temperature from Matter entity."""
         matter_state = self.hass.states.get(self._matter_entity_id)
         if matter_state and matter_state.attributes:
-            return matter_state.attributes.get("min_temp", 7)
-        return 7
+            temp = matter_state.attributes.get("min_temp")
+            if temp is not None:
+                try:
+                    return float(temp)
+                except (ValueError, TypeError):
+                    pass
+        return 7.0
 
     @property
     def max_temp(self) -> float:
         """Return maximum temperature from Matter entity."""
         matter_state = self.hass.states.get(self._matter_entity_id)
         if matter_state and matter_state.attributes:
-            return matter_state.attributes.get("max_temp", 35)
-        return 35
+            temp = matter_state.attributes.get("max_temp")
+            if temp is not None:
+                try:
+                    return float(temp)
+                except (ValueError, TypeError):
+                    pass
+        return 35.0
 
     @property
     def available(self) -> bool:
