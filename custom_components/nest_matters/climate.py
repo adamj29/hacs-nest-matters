@@ -63,8 +63,6 @@ class NestMattersClimate(ClimateEntity):
         # Set unique ID
         self._attr_unique_id = f"{DOMAIN}_{entry_id}"
         
-        # Initialize state
-        self._attr_temperature_unit = UnitOfTemperature.CELSIUS
         # Declare support for basic temp, ranges (Auto mode), and fan
         self._attr_supported_features = (
             ClimateEntityFeature.TARGET_TEMPERATURE
@@ -100,6 +98,18 @@ class NestMattersClimate(ClimateEntity):
             self.async_write_ha_state()
         except Exception as err:
             _LOGGER.debug("Error updating state: %s", err)
+
+    @property
+    def temperature_unit(self) -> str:
+        """Return the temperature unit from the Matter entity."""
+        matter_state = self.hass.states.get(self._matter_entity_id)
+        if matter_state and matter_state.attributes:
+            # Get unit from source entity, fallback to HA's configured unit system
+            unit = matter_state.attributes.get("temperature_unit")
+            if unit:
+                return unit
+        # Fallback to Home Assistant's unit system
+        return self.hass.config.units.temperature_unit
 
     @property
     def current_temperature(self) -> float | None:
