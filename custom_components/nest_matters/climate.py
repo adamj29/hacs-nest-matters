@@ -101,15 +101,22 @@ class NestMattersClimate(ClimateEntity):
 
     @property
     def temperature_unit(self) -> str:
-        """Return the temperature unit from the Matter entity."""
+        """Return the temperature unit matching the source Matter entity."""
+        # Home Assistant climate entities report temperatures in the user's unit system
+        # We must match that to avoid double-conversion
+        return self.hass.config.units.temperature_unit
+
+    def _get_matter_temp_attr(self, attr_name: str) -> float | None:
+        """Get a temperature attribute from the Matter entity."""
         matter_state = self.hass.states.get(self._matter_entity_id)
         if matter_state and matter_state.attributes:
-            # Get unit from source entity, fallback to HA's configured unit system
-            unit = matter_state.attributes.get("temperature_unit")
-            if unit:
-                return unit
-        # Fallback to Home Assistant's unit system
-        return self.hass.config.units.temperature_unit
+            temp = matter_state.attributes.get(attr_name)
+            if temp is not None:
+                try:
+                    return float(temp)
+                except (ValueError, TypeError):
+                    return None
+        return None
 
     @property
     def current_temperature(self) -> float | None:
