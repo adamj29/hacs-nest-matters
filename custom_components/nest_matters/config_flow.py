@@ -217,8 +217,10 @@ class NestMattersConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             if not state:
                 errors[conf_key] = "invalid_entity"
                 continue
-                
-            if state.domain != "climate":
+            
+            # Check domain from entity_id (State objects don't have .domain)
+            domain = entity_id.split(".")[0] if "." in entity_id else ""
+            if domain != "climate":
                 errors[conf_key] = "entity_not_climate"
                 continue
                 

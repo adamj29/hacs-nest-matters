@@ -63,11 +63,12 @@ class NestMattersClimate(ClimateEntity):
         # Set unique ID
         self._attr_unique_id = f"{DOMAIN}_{entry_id}"
         
-        # Declare support for basic temp, ranges (Auto mode), and fan
+        # Declare support for basic temp, ranges (Auto mode), fan, and presets
         self._attr_supported_features = (
             ClimateEntityFeature.TARGET_TEMPERATURE
             | ClimateEntityFeature.TARGET_TEMPERATURE_RANGE
             | ClimateEntityFeature.FAN_MODE
+            | ClimateEntityFeature.PRESET_MODE
         )
         
         # Track state changes of source entities
@@ -214,6 +215,22 @@ class NestMattersClimate(ClimateEntity):
         return []
 
     @property
+    def preset_mode(self) -> str | None:
+        """Return current preset mode from Google entity (home/away/eco)."""
+        google_state = self.hass.states.get(self._google_entity_id)
+        if google_state and google_state.attributes:
+            return google_state.attributes.get("preset_mode")
+        return None
+
+    @property
+    def preset_modes(self) -> list[str]:
+        """Return available preset modes from Google entity."""
+        google_state = self.hass.states.get(self._google_entity_id)
+        if google_state and google_state.attributes:
+            return google_state.attributes.get("preset_modes", [])
+        return []
+
+    @property
     def current_humidity(self) -> int | None:
         """Return current humidity from Google entity."""
         google_state = self.hass.states.get(self._google_entity_id)
@@ -311,6 +328,23 @@ class NestMattersClimate(ClimateEntity):
             {
                 "entity_id": self._google_entity_id,
                 "fan_mode": fan_mode,
+            },
+        )
+
+    async def async_set_preset_mode(self, preset_mode: str) -> None:
+        """Set preset mode (home/away/eco) via Google entity."""
+        _LOGGER.debug(
+            "Setting preset mode to %s via Google entity %s", 
+            preset_mode, 
+            self._google_entity_id
+        )
+
+        await self.hass.services.async_call(
+            "climate",
+            "set_preset_mode",
+            {
+                "entity_id": self._google_entity_id,
+                "preset_mode": preset_mode,
             },
         )
 
