@@ -65,8 +65,10 @@ class NestMattersClimate(ClimateEntity):
         
         # Initialize state
         self._attr_temperature_unit = UnitOfTemperature.CELSIUS
+        # Declare support for basic temp, ranges (Auto mode), and fan
         self._attr_supported_features = (
             ClimateEntityFeature.TARGET_TEMPERATURE
+            | ClimateEntityFeature.TARGET_TEMPERATURE_RANGE
             | ClimateEntityFeature.FAN_MODE
         )
         
@@ -110,6 +112,22 @@ class NestMattersClimate(ClimateEntity):
         matter_state = self.hass.states.get(self._matter_entity_id)
         if matter_state and matter_state.attributes:
             return matter_state.attributes.get("temperature")
+        return None
+
+    @property
+    def target_temperature_high(self) -> float | None:
+        """Return high target temperature from Matter entity."""
+        matter_state = self.hass.states.get(self._matter_entity_id)
+        if matter_state and matter_state.attributes:
+            return matter_state.attributes.get("target_temp_high")
+        return None
+
+    @property
+    def target_temperature_low(self) -> float | None:
+        """Return low target temperature from Matter entity."""
+        matter_state = self.hass.states.get(self._matter_entity_id)
+        if matter_state and matter_state.attributes:
+            return matter_state.attributes.get("target_temp_low")
         return None
 
     @property
@@ -170,36 +188,35 @@ class NestMattersClimate(ClimateEntity):
 
     @property
     def available(self) -> bool:
-        """Return if entity is available."""
+        """Available if Matter is online. Cloud is optional."""
         matter_state = self.hass.states.get(self._matter_entity_id)
-        google_state = self.hass.states.get(self._google_entity_id)
         
-        return (
-            matter_state is not None 
-            and matter_state.state != "unavailable"
-            and google_state is not None 
-            and google_state.state != "unavailable"
-        )
+        # We only strictly require Matter for basic control. 
+        # If Google is down, we just lose Humidity/Fan features temporarily.
+        return matter_state is not None and matter_state.state != "unavailable"
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
-        """Set temperature via Matter entity (avoid rate limits)."""
-        temperature = kwargs.get(ATTR_TEMPERATURE)
-        if temperature is None:
+        """Set temperature via Matter entity (supporting Ranges)."""
+        data = {"entity_id": self._matter_entity_id}
+        
+        # Handle simple target temperature (Heat or Cool mode)
+        if ATTR_TEMPERATURE in kwargs:
+            data["temperature"] = kwargs[ATTR_TEMPERATURE]
+            
+        # Handle temperature ranges (Heat/Cool Auto mode)
+        if "target_temp_low" in kwargs and "target_temp_high" in kwargs:
+            data["target_temp_low"] = kwargs["target_temp_low"]
+            data["target_temp_high"] = kwargs["target_temp_high"]
+            
+        if "temperature" not in data and "target_temp_low" not in data:
             return
 
-        _LOGGER.debug(
-            "Setting temperature to %s via Matter entity %s", 
-            temperature, 
-            self._matter_entity_id
-        )
+        _LOGGER.debug("Setting temperature via Matter entity: %s", data)
 
         await self.hass.services.async_call(
             "climate",
             "set_temperature",
-            {
-                "entity_id": self._matter_entity_id,
-                "temperature": temperature,
-            },
+            data,
         )
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
